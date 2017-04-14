@@ -1,0 +1,72 @@
+---
+# This task will install the openwhisk-package-alarms repos and set it up.
+
+- set_fact:
+    alarms_logs_location={{ whisk_logs_dir }}/alarmsTrigger
+    alarms_location={{ item.value.location }}
+    alarms_repo_url={{ item.value.url }}
+    api_host={{ groups['edge'] | first }}
+    version="HEAD"
+    repo_update="yes"
+
+- set_fact:
+    version={{ item.value.version }}
+  when: item.value.version is defined
+
+- set_fact:
+    repo_update={{ item.value.repo_update }}
+  when: item.value.repo_update is defined
+
+- name: "ensure alarms_logs_location directory exists"
+  file:
+    path: "{{ alarms_logs_location }}"
+    state: directory
+
+- name: "ensure alarms_location directory exists"
+  file:
+    path: "{{ alarms_location }}"
+    state: directory
+
+- name: download the alarms repository to the alarms location if necessary
+  git:
+    repo: "{{ alarms_repo_url }}"
+    dest: "{{ alarms_location }}"
+    update: "{{ repo_update }}"
+    version: "{{ version }}"
+
+- name: install the alarms from the alarms location
+  shell: ./installCatalog.sh {{ alarms_auth_key }} {{ api_host }} {{ api_host }} {{ alarms_api_port }} && touch _installed_catalog
+  args:
+    chdir: "{{ alarms_location }}"
+    creates: "_installed_catalog"
+  environment:
+    OPENWHISK_HOME: "{{ openwhisk_home }}"
+
+- name: create the alarms docker container
+  shell: ./gradlew :distDocker && touch _installed_container
+  args:
+    chdir: "{{ alarms_location }}"
+    creates: "_installed_container"
+  environment:
+    OPENWHISK_HOME: "{{ openwhisk_home }}"
+
+- name: (re)start alarms trigger
+  docker_container:
+    name: alarms
+    image: whisk/catalog_alarms
+    state: started
+    recreate: true
+    restart_policy: "{{ docker.restart.policy }}"
+    hostname: alarms
+    env:
+      "PORT": "8080"
+      "ROUTER_HOST": "{{ api_host }}"
+      "DB_PREFIX": "whisk_alarms"
+      "DB_USERNAME": "{{ db_username }}"
+      "DB_PASSWORD": "{{ db_password }}"
+      "DB_HOST": "{{ db_host }}:{{ db_port }}"
+      "DB_PROTOCOL": "{{ db_protocol }}"
+    ports:
+      - "{{ alarms_api_port }}:8080"
+    volumes:
+      - "{{ alarms_logs_location }}:/logs"

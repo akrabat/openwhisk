@@ -180,3 +180,25 @@ catalog_repos:
     location: "{{ openwhisk_home }}/../openwhisk-catalog"
     version: "HEAD"
     repo_update: "no"
+
+
+# The default name space is /whisk.system. The catalog namespace must begin with a slash "/".
+alarms_namespace: "/whisk.system"
+
+# The alarms_auth_key is used to determine the secret key to authenticate the openwhisk service.
+# The value for this variable can be set to either the secret key itself or the file, which
+# saves the secret key.
+# By default, we take the key from {{ openwhisk_home }}/ansible/files/auth.whisk.system.
+alarms_auth_key: "{{ openwhisk_home }}/ansible/files/auth.whisk.system"
+
+# The alarms_api_port is the port number that we'll access the docker container on
+alarms_api_port: "11001"
+
+
+alarms_repos:
+  openwhisk-package-alarms:
+    url: https://github.com/openwhisk/openwhisk-package-alarms.git
+    # Set the local location as the same level as openwhisk home, but it can be changed.
+    location: "{{ openwhisk_home }}/../openwhisk-package-alarms"
+    version: "HEAD"
+    repo_update: "no"

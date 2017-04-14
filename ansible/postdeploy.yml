@@ -8,3 +8,6 @@
     - include: tasks/installOpenwhiskCatalog.yml
       when: (mode == "deploy")
       with_dict: "{{ catalog_repos }}"
+    - include: tasks/installOpenwhiskAlarms.yml
+      when: (mode == "deploy")
+      with_dict: "{{ alarms_repos }}"
