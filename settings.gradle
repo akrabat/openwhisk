@@ -9,6 +9,7 @@ include 'core:pythonAction'
 include 'core:python2Action'
 include 'core:swift3Action'
 include 'core:javaAction'
+include 'core:php7.1Action'
 
 include 'tools:cli'
 
