@@ -41,9 +41,19 @@ RUN mkdir -p /action/src
 COPY composer.json /action
 RUN cd /action && /usr/bin/composer install --no-plugins --no-scripts --prefer-dist --no-dev -o && rm composer.lock
 
-# copy required files
-COPY router.php /action
+# Run the actionproxy webserver on port 8080
+RUN apk add gcc python3 python3-dev musl-dev
+RUN pip3 install --upgrade pip
 
-# Run webserver on port 8080
+RUN pip3 install gevent
+RUN pip3 install flask
+
+COPY actionproxy.py /action
+COPY phprunner.py /action
+COPY runner.php /action
+
+RUN chmod a+r /action/runner.php
+
 EXPOSE 8080
-CMD [ "php", "-S", "0.0.0.0:8080", "-d", "expose_php=0", "/action/router.php" ]
+ENV FLASK_PROXY_PORT 8080
+CMD ["/bin/sh", "-c", "cd /action && PYTHONIOENCODING='utf-8' python3 -u phprunner.py"]
